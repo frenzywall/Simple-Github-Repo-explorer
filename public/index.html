@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repo Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input[type="text"] {
+            width: 200px;
+            padding: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .repo {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .file {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>GitHub Repository Viewer</h1>
+    <input type="text" id="username" placeholder="Enter GitHub username">
+    <button id="fetchRepos">Fetch Repositories</button>
+
+    <div id="repositories"></div>
+
+    <script>
+        document.getElementById('fetchRepos').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const reposContainer = document.getElementById('repositories');
+            reposContainer.innerHTML = ''; // Clear previous results
+
+            try {
+                const reposResponse = await fetch(`/repositories/${username}`);
+                if (!reposResponse.ok) throw new Error('Error fetching repositories');
+                const repositories = await reposResponse.json();
+
+                repositories.forEach(repo => {
+                    const repoDiv = document.createElement('div');
+                    repoDiv.className = 'repo';
+                    repoDiv.innerHTML = `
+                        <h2>${repo.full_name}</h2>
+                        <p>${repo.description || 'No description available.'}</p>
+                        <p><strong>Language:</strong> ${repo.language || 'N/A'}</p>
+                        <button onclick="fetchFiles('${repo.full_name}', 'main')">Fetch Files</button>
+                        <div id="${repo.name}-files" class="files"></div>
+                    `;
+                    reposContainer.appendChild(repoDiv);
+                });
+            } catch (error) {
+                reposContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            }
+        });
+
+        async function fetchFiles(repoFullName, branch) {
+            const [owner, repo] = repoFullName.split('/');
+            const filesContainer = document.getElementById(`${repo}-files`);
+            filesContainer.innerHTML = ''; // Clear previous results
+
+            try {
+                const filesResponse = await fetch(`/files/${owner}/${repo}/${branch}`);
+                if (!filesResponse.ok) throw new Error('Error fetching files');
+                const files = await filesResponse.json();
+
+                files.forEach(file => {
+                    const fileDiv = document.createElement('div');
+                    fileDiv.className = 'file';
+                    fileDiv.innerHTML = `
+                        <p>${file.name} (Size: ${file.size} bytes) 
+                        <a href="${file.download_url}" target="_blank">Download</a></p>
+                    `;
+                    filesContainer.appendChild(fileDiv);
+                });
+            } catch (error) {
+                filesContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
