@@ -1,8 +1,12 @@
+
 const express = require('express');
 const axios = require('axios');
-const path = require('path');
+const cors = require('cors');
 const app = express();
 const port = 3000;
+
+// Middleware for parsing JSON
+app.use(cors()); // Enable CORS
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/repositories/:owner', async (req, res) => {
